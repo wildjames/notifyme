@@ -1,38 +1,34 @@
-import smtplib
-from os.path import basename
-from email.mime.application import MIMEApplication
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import COMMASPACE, formatdate
+import getpass
+import glob
+import json
 
-
-def send_mail(send_from, send_to, subject, text, files=None,
-              server="127.0.0.1"):
-    assert isinstance(send_to, list)
-
-    msg = MIMEMultipart()
-    msg['From'] = send_from
-    msg['To'] = COMMASPACE.join(send_to)
-    msg['Date'] = formatdate(localtime=True)
-    msg['Subject'] = subject
-
-    msg.attach(MIMEText(text))
-
-    for f in files or []:
-        with open(f, "rb") as fil:
-            part = MIMEApplication(
-                fil.read(),
-                Name=basename(f)
-            )
-        # After the file is closed
-        part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
-        msg.attach(part)
-
-
-    smtp = smtplib.SMTP(server)
-    smtp.sendmail(send_from, send_to, msg.as_string())
-    smtp.close()
+import yagmail as yag
 
 
 if __name__ == "__main__":
+    # Gather the files
+    myLoc = '.'
+    fnames = list(glob.iglob('{}/**/*.png'.format(myLoc), recursive=True))
+    fnames = [name for name in fnames if not "corner" in name.lower()]
+    print("fnames: ")
+    for name in fnames:
+        print("-> '{}'".format(name))
 
+    # Who from, who to
+    send_to = 'wild.james343@gmail.com'
+    send_from = "jwild2@sheffield.ac.uk"
+
+    # Server
+    server = "smtp.gmail.com"
+
+    pword = getpass.getpass("Enter email password: ")
+
+    subject = "Incoming files"
+
+    contents = [
+        'This is some test body text'
+    ]
+    contents.extend(fnames)
+
+    client = yag.SMTP(send_from, pword)
+    client.send(send_to, subject, contents)
